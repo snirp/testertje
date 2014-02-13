@@ -4,7 +4,7 @@ Flatfreeze is a reference implementation of a static site generator ([Frozen-Fla
 
 Github Pages actually has a static site generator called Jekyll built in. Jekyll unfortunately gets templating wrong -no support for template inheritance- and is very closely tied to blogging. That means your are forced to use dates in your filenames and it leaves the bad taste of Wordpress blogs with tags and monthly archives.
 
-When building the page for my company [Snirp](), I came across a better alternative: [Flask]() together with [Flask-Flatpages](). Some of the advatages of the approach include:
+When building the page for my company [Snirp](http://snirp.nl), I came across a better alternative: [Flask]() together with [Flask-Flatpages](). Some of the advatages of the approach include:
 
 * Proper templating with template inheritance;
 * Free hosting on Github Pages, with optional use of a custom domain name;
@@ -252,7 +252,7 @@ Our `/templates/index.html` extends from the 'base.html' template.
 {% endblock %}
 ```
 
-We refer to main.ccs file using a template tag. When Flask renders the template, this tag is replaced with the correct link. Let's make sure we have `/static/css/main.ccs`
+We refer to main.ccs file using a template tag. When Flask renders the template, this tag is replaced with the correct link. Let's make sure we have `/static/css/main.ccs`:
 
 ```
 h1 {
@@ -260,7 +260,6 @@ h1 {
   font-size:2.5em;
   margin: 0 auto;
 }
-
 p {
   max-width: 700px;
   font-size:1.25em;
@@ -278,22 +277,177 @@ venv$ python app.py
 
 ##Freeze and publish
 
-We now have a Flask app running locally on the development server. It is dead easy to freeze this to the gh-pages folder:
+We now have a Flask app running locally on the development server. Let's commit the current state and next freeze this to the gh-pages folder:
 
 ```
+venv$ git add .
+venv$ git commit -m "working Flask app"
+venv$ git push origin master
 venv$ python freeze.py
 venv$ cd gh-pages
 venv$ ls
 index.html   static
 ```
 
-You can open the index.html file in your browser. Test to see that it look just the same as before. Lets push the result to Github for the whole world to see. Still in the gh-pages folder do:
+You can open the index.html file in your browser. Test to see that it looks just as expected. Lets push the result to Github for the whole world to see. Still in the gh-pages folder do:
 
 
 ```
 venv$ git add .
 venv$ git commit -m "first frozen page"
-venv$ git push
+venv$ git push origin gh-pages
 ```
 
-Check out the result on [username].github.io/[reponame]
+Check out the result on [username].github.io/[reponame].
+
+###additional files
+
+We can set up a custom domain by adding a file named `CNAME` to the gh-pages folder with only the domain name:
+
+```
+flatfreeze.com
+```
+
+Now make some DNS changes and point the A record of your domain to `192.30.252.153` and `192.30.252.154`. Wait 24 hours for changes to take effect. Refer to the [Github documentation](https://help.github.com/articles/setting-up-a-custom-domain-with-pages) for more details.
+
+Add a `readme.md` file to the same folder to document your repository:
+
+```
+##About the branch
+This gh-pages branch was generated using [frozen-flask]
+(http://pythonhosted.org/Frozen-Flask/) and is hosted 
+through [Github Pages](http://pages.github.com/). 
+See the end result at [flatfreeze.com](http://flatfreeze.com).
+##See the code
+The application code can be viewed by switching to the 
+[master branch](https://github.com/snirp/flatfreeze/tree/master).
+```
+
+We did not yet add a `.gitignore` file to the gh-pages branch. Let's take care of that:
+
+```
+.idea
+*.pyc
+*~
+.DS_Store
+.idea
+```
+
+Remember that we already included these files in the ignore-list:
+
+* FREEZER_DESTINATION_IGNORE = ['.git*', 'CNAME', '.gitignore', 'readme.md']
+
+That means these will not be deleted the next time we freeze the application.
+
+###Contact page, sitemap and 404
+
+Most websites have some added complexity beyond the index.html page. In our case this will ammount to a contact.html page, a sitemap.xml and a 404 not found page. For each of these, we will add a template. Some new template tags are introduced, so if you not yet comfortable with Flask/Jinja2 templating, refer to the [documentation](http://jinja.pocoo.org/docs/templates/).
+
+The `/templates/contact.html` is similar to our index.html.
+
+```
+{% extends 'base.html' %}
+{% block head %}
+  {{ super() }}
+  <link rel='stylesheet' href="{{ url_for('static', filename='css/main.css') }}">
+{% endblock %}
+{% block content %}
+  <h1>contact us</h1>
+  <ul>
+    <li>call us <a href="tel:0800-54321">0800-54321</a></li>
+    <li>mail us <a href="mailto:i@flatfreeze.com">i@flatfreeze.com</a></li>
+    <li>visit us: 101st Street, New York, NY</li>
+   </ul>
+   back to <a href="{{ url_for('index') }}">index</a>
+{% endblock %}
+```
+
+Ok, we are not winning prizes for design or usability here, but it gets the point across. Likewise we should make a `/templates/404.html` with a friendly error page.
+
+```
+{% extends 'base.html' %}
+{% block content %}
+<h1>page not found</h1>
+<p>We have sent out Sir Henry Morton Stanley to try and find the
+page for you. In the mean time you should probably return to the
+<a href="{{ url_for('index') }}">homepage</a>.</p>
+{% endblock %}
+```
+
+The final template is the `/templates/sitemap.xml` page. This serves to give the search engines information what locations to index and when to do so.
+
+```
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    {% for s in sites %}
+    <url>
+        <loc>{{s[0]|safe}}</loc>
+        <lastmod>{{s[1]}}</lastmod>
+    </url>
+    {% endfor %}
+</urlset>
+```
+
+All we have now is some templates. We need to set up the routing to tie it all together. Change `app.py` so it resembles:
+
+```
+from flask import Flask, render_template
+
+# initialization
+app = Flask(__name__)
+
+# configuration
+app.config['FREEZER_DESTINATION'] = 'gh-pages'
+app.config['FREEZER_DESTINATION_IGNORE'] = ['.git*', 'CNAME', '.gitignore', 'readme.md']
+app.config['FREEZER_RELATIVE_URLS'] = True
+
+SITEMAP_DOMAIN = 'http://flatfreeze.com/'
+
+# controllers
+@app.route("/")
+def index():
+    return render_template('index.html')
+
+@app.route('/contact.html')
+def contact():
+    return render_template('contact.html')
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
+
+@app.route('/404.html')
+def static_404():
+    return render_template('404.html')
+
+@app.route('/sitemap.xml')
+def generate_sitemap():
+    locations = [
+        ('',              '2014-02-13'),
+        ('contact.html',  '2014-02-13'),
+    ]
+    sites = [(SITEMAP_DOMAIN + l[0], l[1]) for l in locations]
+    return render_template('sitemap.xml', sites=sites)
+
+# launch
+if __name__ == "__main__":
+    app.run(debug=True)
+```
+
+Frozen-Flask follows the routes we have set up for `/`, `contact.html`, `404.html` and `sitemap.xml` and generates the related pages. Here we use two different setups for the `404` response:
+
+1. A Flask app uses the errorhandler. This is only for when we run the app locally.
+2. Github Pages expects a `404.html` page to exist and will serve that. Setting up the routing here guarantees that this page will exist.
+
+The controller function for the sitemap is slightly more complex. This will however scale up nicely to include more locations and also pages created by Flask-Flatpages when we get to that.
+
+We can now commit and push the changes so far run the application to see whether everything works. 
+
+```
+venv$ git add .
+venv$ git commit -m "added 404, sitemap and contact page"
+venv$ git push origin master
+venv$ python app.py
+```
+
+dsddsds
