@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block head %}
+  {{ super() }}
+  <link rel='stylesheet' href="{{ url_for('static', filename='css/main.css') }}">
+{% endblock %}
+
+{% block content %}
+  <h1>flatfreeze</h1>
+  <p>Flatten & freeze in one go!</p>
+{% endblock %}

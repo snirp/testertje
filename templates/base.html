@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% block head %}
+  <title>{% if title %}{{title}}{% else %}Flatfreeze{% endif %}</title>
+  <meta charset="utf-8">
+  {% if description %}
+    <meta name="description" content="{{description}}">
+  {% else %}
+    <meta name="description" content="Flatfreeze flattens & freezes in one go!">
+  {% endif %}
+{% endblock %}
+</head>
+<body>
+  {% block content %}
+  {% endblock %}
+</body>
+</html>
