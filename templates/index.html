@@ -8,4 +8,14 @@
 {% block content %}
   <h1>flatfreeze</h1>
   <p>Flatten & freeze in one go!</p>
+
+  {% for b in blog_list %}
+    <div>
+      <a href="{{ url_for('blog_detail', path=b.path ) }}">
+        {{ b.meta.description }}
+      </a>
+    </div>
+  {% endfor %}
+
+  <h3><a href="{{ url_for('blog_index') }}">full blog</a></h3>
 {% endblock %}
