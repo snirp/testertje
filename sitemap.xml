@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    
+    <url>
+        <loc>http://flatfreeze.com/</loc>
+        <lastmod>2014-02-13</lastmod>
+    </url>
+    
+    <url>
+        <loc>http://flatfreeze.com/contact.html</loc>
+        <lastmod>2014-02-13</lastmod>
+    </url>
+    
+    <url>
+        <loc>http://flatfreeze.com/blog/example_blog_posting.html</loc>
+        <lastmod>2014-02-14</lastmod>
+    </url>
+    
+    <url>
+        <loc>http://flatfreeze.com/blog/second_lorem_ipsum.html</loc>
+        <lastmod>2014-02-15</lastmod>
+    </url>
+    
+</urlset>
